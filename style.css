@@ -11,7 +11,7 @@ body {
 
 .quiz-container {
     background-color: #333335;
-    color: #000000;
+    color: #ffffff;
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     width: 80%;
@@ -37,6 +37,7 @@ body {
 
 .slide {
     display: none;
+
 }
 
 .active-slide {
@@ -61,6 +62,7 @@ input[type="radio"] {
 }
 
 input[type="radio"] + label {
+    color:#131315;
     display: inline-block;
     padding: 10px 20px;
     margin: 5px;

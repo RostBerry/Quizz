@@ -1,6 +1,5 @@
 const resultsContainer = document.getElementById('results');
 const nextButton = document.getElementById('next');
-const submitButton = document.getElementById('submit');
 const restartButton = document.getElementById('restart');
 const progressBar = document.getElementById('progress-bar');
 
@@ -198,6 +197,8 @@ const quizQuestions = [
 ];  
 
 let currentQuestionIndex = 1;
+let currentSlideState = 0; //0 for question, 1 for result
+let correctAnswerCount = 0;
 
 const quizContainer = document.getElementById('quiz');
 buildQuiz();
@@ -208,7 +209,6 @@ function buildQuiz() {
   quizQuestions.forEach((question, questionIndex) => {
     const answers = [];
     Object.entries(question.answers).forEach(([letter, value], answerIndex) => {
-      console.log("question ${questionIndex} answer ${answerIndex}");
       answers.push(
         `<input type="radio" id="answer${questionIndex}-${answerIndex}" name="question${questionIndex}" value="${letter}">
         <label for="answer${questionIndex}-${answerIndex}">${letter}. ${value}</label>` 
@@ -227,25 +227,12 @@ function buildQuiz() {
 function showResults() {
   currentQuestionIndex++;
   updateProgressBar();
-  const answerContainers = quizContainer.querySelectorAll('.answers');
-  let numCorrect = 0;
 
-  quizQuestions.forEach((question, index) => {
-    const answerContainer = answerContainers[index];
-    const selector = `input[name=question${index}]:checked`;
-    const userAnswer = (answerContainer.querySelector(selector) || {}).value;
+  quizContainer.style.display = 'none';
 
-    if (userAnswer === question.correctAnswer) {
-        numCorrect++;
-        answerContainers[index].style.color = 'green';
-    } else {
-        answerContainers[index].style.color = 'red';
-    }
-  });
+  resultsContainer.innerHTML = `You got ${correctAnswerCount} out of ${quizQuestions.length} correct.`;
 
-  resultsContainer.innerHTML = `You got ${numCorrect} out of ${quizQuestions.length} correct.`;
-
-  submitButton.style.display = 'none';
+  nextButton.style.display = 'none';
   restartButton.style.display = 'inline-block';
 }
 
@@ -254,40 +241,81 @@ function updateProgressBar() {
     progressBar.value = progress;
 }
 
-function showSlide() {
-    updateProgressBar();
+function checkAnswer(index) {
+  const correctAnswer = quizQuestions[index].correctAnswer;
+  const answerContainer = quizContainer.querySelectorAll('.answers')[index];
+  const selector = `input[name=question${index}]:checked`;
+  const userAnswer = (answerContainer.querySelector(selector) || {}).value;
 
-    if (currentQuestionIndex === quizQuestions.length - 1) {
-        nextButton.style.display = 'none';
-        submitButton.style.display = 'inline-block';
-    } else {
-        nextButton.style.display = 'inline-block';
-        submitButton.style.display = 'none';
+  if (userAnswer === correctAnswer) {
+      answerContainer.style.color = 'green';
+      return true;
+  } else {
+      answerContainer.style.color = 'red';
+      return false;
+  }
+}
+
+function clearResultColors() {
+  quizContainer.querySelectorAll('.answers').forEach((answerContainer, index) => {
+    answerContainer.style.color = 'white';
+  })
+}
+
+function clearCheckedAnswer() {
+  const selector = `input[name=question${currentQuestionIndex}]`;
+  const answerContainer = quizContainer.querySelectorAll('.answers')[currentQuestionIndex];
+  const answers = answerContainer.querySelectorAll(selector);
+  answers.forEach(function(answer) {
+    answer.checked = false;
+  })
+}
+
+function clickNext() {
+  if (currentSlideState === 0) {
+    if (checkAnswer(currentQuestionIndex)) {
+      correctAnswerCount++;
     }
+    currentSlideState = 1;
+    nextButton.innerText = 'Next';
+  } else {
+    clearResultColors();
+    clearCheckedAnswer();
+    if (currentQuestionIndex === quizQuestions.length - 1) {
+      showResults();
+    } else {
+      currentSlideState = 0;
+      nextButton.innerText = 'Submit';
+      showNextSlide();
+    }
+    
+  }
+
 }
 
 function showNextSlide() {
     currentQuestionIndex++;
     slides[currentQuestionIndex - 1].classList.remove('active-slide');
     slides[currentQuestionIndex].classList.add('active-slide');
-    showSlide();
+    updateProgressBar();
 }
 
 function resetQuiz() {
-  console.log(slides, slides[currentQuestionIndex], currentQuestionIndex);
   currentQuestionIndex--;
+  correctAnswerCount = 0;
+  currentSlideState = 0;
   resultsContainer.innerHTML = "";
   restartButton.style.display = "none";
   slides[currentQuestionIndex].classList.remove('active-slide');
   currentQuestionIndex = 0;
   slides[0].classList.add('active-slide');
-  showSlide();
+  quizContainer.style.display = 'block';
+  nextButton.style.display = 'inline-block';
+  nextButton.innerText = 'Submit';
   updateProgressBar();
 }
 
 resetQuiz();
-
-submitButton.addEventListener('click', showResults);
-nextButton.addEventListener('click', showNextSlide);
+nextButton.addEventListener('click', clickNext);
 
 restartButton.addEventListener('click', resetQuiz);
